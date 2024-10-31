@@ -3,7 +3,7 @@ import pygame as pg
 import sys
 from gerar_labirinto import *
 from PIL import Image
-from random import randint, choice
+from random import randint, choice, sample
 import pickle
 from time import sleep
 
@@ -30,6 +30,8 @@ cor = [randint(15, 255), randint(15, 255), randint(15, 255)]
 conectado_servidor = False
 
 pg.init()
+pg.font.init()
+font = pg.font.Font(None, 36)
 
 # Inicializa joystick, se disponível
 try:
@@ -54,30 +56,22 @@ x_mouse, y_mouse = posicoes[id_jogador][0]
 tela.blit(fundo, fundo_rect)
 pg.display.update()
 
-# Função para gerar objetos coletáveis em posições aleatórias no labirinto
-def gerar_objetos():
-    objetos = []
-    for _ in range(5):  # Número de objetos coletáveis
-        x = choice(range(1, tamanho[0] - 1)) * size + size // 2
-        y = choice(range(1, tamanho[1] - 1)) * size + size // 2
-        objetos.append([x, y])
-    return objetos
+# Lista de palavras e escolha aleatória
+lista_palavras = ["PYTHON", "LABIRINTO", "JOGO", "DESAFIO"]
+palavra_secreta = choice(lista_palavras)
+letras_palavra = list(palavra_secreta)
+letras_coletadas = []
+posicoes_letras = gerar_posicoes_letras(tamanho, size, letras_palavra)
 
-objetos = gerar_objetos()
+# Função para desenhar as letras na tela
+def desenhar_letras(tela, letras, posicoes):
+    for letra, pos in zip(letras, posicoes):
+        letra_surface = font.render(letra, True, (0, 255, 0))
+        tela.blit(letra_surface, pos)
 
-# Função para desenhar os objetos na tela
-def desenhar_objetos(tela, objetos):
-    for obj in objetos:
-        pg.draw.circle(tela, (0, 255, 0), obj, size // 4)  # Verde para os objetos
-
-# Função para verificar se o jogador coleta um objeto
-def verificar_coleta(posicoes, objetos):
-    novos_objetos = []
-    for obj in objetos:
-        if abs(posicoes[id_jogador][0][0] - obj[0]) < size // 2 and abs(posicoes[id_jogador][0][1] - obj[1]) < size // 2:
-            continue  # Coletado, não adiciona na nova lista
-        novos_objetos.append(obj)
-    return novos_objetos
+# Inicializa coletar_letra
+coletar_letra = False
+vencedor = False
 
 while True:
     fps.tick(10)
@@ -92,7 +86,9 @@ while True:
             sys.exit()
 
         elif event.type == pg.KEYDOWN:
-            if event.key == pg.K_LEFT:
+            if event.key == pg.K_SPACE:
+                coletar_letra = True
+            elif event.key == pg.K_LEFT:
                 posicoes, jogou = move.esquerda(rgb, size, posicoes, id_jogador)
             elif event.key == pg.K_RIGHT:
                 posicoes, jogou = move.direita(rgb, size, posicoes, id_jogador)
@@ -101,40 +97,34 @@ while True:
             elif event.key == pg.K_DOWN:
                 posicoes, jogou = move.baixo(rgb, size, posicoes, id_jogador)
 
-        else:
-            if x_mouse < posicoes[id_jogador][0][0] - size/2:
-                posicoes, jogou = move.esquerda(rgb, size, posicoes, id_jogador)
-            elif x_mouse > posicoes[id_jogador][0][0] + size/2:
-                posicoes, jogou = move.direita(rgb, size, posicoes, id_jogador)
-            elif y_mouse < posicoes[id_jogador][0][1] - size/2:
-                posicoes, jogou = move.cima(rgb, size, posicoes, id_jogador)
-            elif y_mouse > posicoes[id_jogador][0][1] + size/2:
-                posicoes, jogou = move.baixo(rgb, size, posicoes, id_jogador)
+        elif event.type == pg.KEYUP:
+            if event.key == pg.K_SPACE:
+                coletar_letra = False
 
-    # Controle via joystick
-    if houver_controle:
-        vertical = round(joystick.get_axis(1))
-        horizontal = round(joystick.get_axis(0))
+    # Verifica se o jogador coleta uma letra
+    letras_coletadas, posicoes_letras = verificar_coleta_letra(
+        posicoes[id_jogador][0], letras_palavra, letras_coletadas, posicoes_letras, size, coletar_letra
+    )
 
-        if horizontal < 0:
-            posicoes, jogou = move.esquerda(rgb, size, posicoes, id_jogador)
-        elif horizontal > 0:
-            posicoes, jogou = move.direita(rgb, size, posicoes, id_jogador)
-        elif vertical < 0:
-            posicoes, jogou = move.cima(rgb, size, posicoes, id_jogador)
-        elif vertical > 0:
-            posicoes, jogou = move.baixo(rgb, size, posicoes, id_jogador)
+    # Checa se todas as letras foram coletadas para vencer
+    if len(letras_coletadas) == len(letras_palavra):
+        vencedor = True
 
-    vencedor = verificar_vitoria(posicoes, tamanho, size)
+    # Verifica condição de vitória
+    if vencedor:
+        print("Você venceu!")
+        break
 
-    # Verifica se o jogador coletou algum objeto
-    objetos = verificar_coleta(posicoes, objetos)
-    if len(objetos) < 5:  # Reabastece os objetos se necessário
-        objetos.extend(gerar_objetos())
+    # Verifica se o jogador coletou alguma letra
+    # letras_coletadas, posicoes_letras = verificar_coleta_letra(posicoes[id_jogador][0], letras_palavra, letras_coletadas, posicoes_letras, size)
 
-    # Desenha o jogador e os objetos coletáveis na tela
+    # Desenha o jogador, letras e as letras coletadas
     posicionar_jogadores(tela, posicoes, size)
-    desenhar_objetos(tela, objetos)
+    desenhar_letras(tela, letras_palavra, posicoes_letras)
+
+    # Exibe as letras coletadas
+    texto = font.render("Palavra: " + "".join(letras_coletadas), True, (255, 255, 255))
+    tela.blit(texto, (10, 10))
 
     pg.draw.rect(tela, cor, ((posicoes[id_jogador][0][0] - size/2 + 1, posicoes[id_jogador][0][1] - size/2 + 1), (size-1, size-1)))
     pg.display.update()
