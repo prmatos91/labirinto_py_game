@@ -66,8 +66,43 @@ posicoes_letras = gerar_posicoes_letras(tamanho, size, letras_palavra)
 # Função para desenhar as letras na tela
 def desenhar_letras(tela, letras, posicoes):
     for letra, pos in zip(letras, posicoes):
-        letra_surface = font.render(letra, True, (0, 255, 0))
+        letra_surface = font.render(letra, True, (255, 255, 255))  # Cor branca para visibilidade
         tela.blit(letra_surface, pos)
+
+
+# Função para largar uma letra e reposicioná-la corretamente no labirinto
+# Função para largar uma letra e reposicioná-la corretamente no labirinto
+# Função para largar a última letra coletada e reposicioná-la corretamente no labirinto
+# Função para coletar letras quando o jogador as encontra
+
+
+
+# Função para largar a última letra coletada em uma nova posição
+# Função para largar uma letra e reposicioná-la corretamente no labirinto
+def largar_letra(letras_coletadas, posicao_jogador, size, letras_palavra, posicoes_letras):
+    if letras_coletadas:
+        # Remove a última letra coletada e a coloca em uma nova posição
+        ultima_letra = letras_coletadas.pop()
+
+        # Gera uma nova posição ao redor da posição do jogador, garantindo que seja única
+        nova_pos = (
+            posicao_jogador[0] + randint(-size, size),
+            posicao_jogador[1] + randint(-size, size)
+        )
+
+        # Checa se a posição já está ocupada para evitar duplicatas
+        while nova_pos in posicoes_letras:
+            nova_pos = (
+                posicao_jogador[0] + randint(-size, size),
+                posicao_jogador[1] + randint(-size, size)
+            )
+
+        # Adiciona a letra e a posição correspondentes nas listas
+        letras_palavra.append(ultima_letra)
+        posicoes_letras.append(nova_pos)
+
+        return ultima_letra, nova_pos
+
 
 # Inicializa coletar_letra
 coletar_letra = False
@@ -107,7 +142,7 @@ while True:
     )
 
     # Checa se todas as letras foram coletadas para vencer
-    if len(letras_coletadas) == len(letras_palavra):
+    if "".join(sorted(letras_coletadas)) == "".join(sorted(letras_palavra)):
         vencedor = True
 
     # Verifica condição de vitória
@@ -115,18 +150,22 @@ while True:
         print("Você venceu!")
         break
 
-    # Verifica se o jogador coletou alguma letra
-    # letras_coletadas, posicoes_letras = verificar_coleta_letra(posicoes[id_jogador][0], letras_palavra, letras_coletadas, posicoes_letras, size)
-
-    # Desenha o jogador, letras e as letras coletadas
-    posicionar_jogadores(tela, posicoes, size)
+    # Desenha as letras no labirinto
     desenhar_letras(tela, letras_palavra, posicoes_letras)
+
+    # Desenha o jogador e as letras coletadas
+    posicionar_jogadores(tela, posicoes, size)
 
     # Exibe as letras coletadas
     texto = font.render("Palavra: " + "".join(letras_coletadas), True, (255, 255, 255))
     tela.blit(texto, (10, 10))
 
-    pg.draw.rect(tela, cor, ((posicoes[id_jogador][0][0] - size/2 + 1, posicoes[id_jogador][0][1] - size/2 + 1), (size-1, size-1)))
+    # Desenhar a palavra completa na tela
+    texto_palavra = font.render("Palavra: " + palavra_secreta, True, (255, 255, 255))
+    tela.blit(texto_palavra, (10, 30))
+
+    pg.draw.rect(tela, cor, (
+    (posicoes[id_jogador][0][0] - size // 2 + 1, posicoes[id_jogador][0][1] - size // 2 + 1), (size - 1, size - 1)))
     pg.display.update()
 
     if vencedor:

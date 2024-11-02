@@ -81,7 +81,9 @@ def verificar_coleta_letra(posicao_jogador, letras, letras_coletadas, posicoes_l
         if abs(posicao_jogador[0] - pos[0]) < size // 2 and abs(posicao_jogador[1] - pos[1]) < size // 2:
             # Coleta a letra apenas se a tecla espaço for pressionada
             if coletar:
-                letras_coletadas.append(letras[i])
+                letra_coletada = letras[i]  # Captura a letra coletada
+                letras_coletadas.append(letra_coletada)
+                print(f"Coletada: {letra_coletada}")
             else:
                 novas_posicoes.append(pos)
         else:
