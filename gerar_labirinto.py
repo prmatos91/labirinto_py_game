@@ -1,4 +1,4 @@
-from random import shuffle, randrange, choice, randint
+from random import shuffle, randrange, randint
 from PIL import ImageDraw
 import pygame
 from pygame import *
@@ -68,10 +68,12 @@ def desenhar_labirinto_pillow(img, tamanho, posicoes, size=11):
 def gerar_posicoes_letras(tamanho, size, letras):
     posicoes = []
     for letra in letras:
+        # Gera posições no centro de cada célula
         x = randint(1, tamanho[0] - 2) * size + size // 2
         y = randint(1, tamanho[1] - 2) * size + size // 2
         posicoes.append((x, y))
     return posicoes
+
 
 
 # Função para verificar e coletar letras quando o jogador pressiona 'Espaço'
@@ -89,6 +91,34 @@ def verificar_coleta_letra(posicao_jogador, letras, letras_coletadas, posicoes_l
         else:
             novas_posicoes.append(pos)
     return letras_coletadas, novas_posicoes
+
+
+# Função para largar uma letra
+def largar_letra(letras_coletadas, posicao_jogador, size, letras_palavra, posicoes_letras):
+    """
+    Solta a última letra coletada e a posiciona em uma nova posição válida.
+    """
+    if letras_coletadas:
+        # Remove a última letra coletada
+        ultima_letra = letras_coletadas.pop()
+        print(f"Letra '{ultima_letra}' foi solta.")
+
+        # Define uma nova posição para a letra ao redor do jogador
+        nova_pos = (
+            posicao_jogador[0] + randint(-size, size),
+            posicao_jogador[1] + randint(-size, size)
+        )
+
+        # Garante que a nova posição não seja ocupada por outra letra
+        while nova_pos in posicoes_letras:
+            nova_pos = (
+                posicao_jogador[0] + randint(-size, size),
+                posicao_jogador[1] + randint(-size, size)
+            )
+
+        # Reinsere a letra e a posição nas listas correspondentes
+        letras_palavra.append(ultima_letra)
+        posicoes_letras.append(nova_pos)
 
 
 # Função para desenhar o fim do labirinto
